@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d12">
+<title>Human Detector — Fleet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f6f8; --surface: #ffffff; --surface-2: #f0f2f5; --border: #e3e6eb; --border-strong: #cfd4dc;
+    --text: #0e1525; --muted: #667085; --faint: #98a2b3;
+    --accent: #3451f5; --accent-soft: #ebeeff; --on-accent: #ffffff;
+    --ok: #0f9f5c; --ok-soft: #e4f6ec; --warn: #c97400; --warn-soft: #fdf1dc; --bad: #d92d20; --bad-soft: #fde8e6;
+    --occ: #e8590c; --occ-soft: #ffeee2; --idle-soft: #eef0f3;
+    --shadow: 0 1px 2px rgba(16,24,40,.05), 0 1px 3px rgba(16,24,40,.06);
+    --shadow-lg: 0 24px 60px rgba(16,24,40,.18);
+    --r: 14px;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a0c11; --surface: #11141b; --surface-2: #171b24; --border: #212734; --border-strong: #2f3747;
+    --text: #eef1f6; --muted: #8e97aa; --faint: #5f6878;
+    --accent: #7c93ff; --accent-soft: #19204a; --on-accent: #0a0c11;
+    --ok: #3ccf8e; --ok-soft: #10291f; --warn: #f5b041; --warn-soft: #2e2410; --bad: #ff6b5e; --bad-soft: #321614;
+    --occ: #ff9447; --occ-soft: #33200f; --idle-soft: #1a1e27;
+    --shadow: 0 1px 2px rgba(0,0,0,.4); --shadow-lg: 0 24px 60px rgba(0,0,0,.6);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.5 Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
+  .num { font-variant-numeric: tabular-nums; }
+  button, input, textarea, select { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  .hidden { display: none !important; }
+  .muted { color: var(--muted); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+  svg.ic { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 10px;
+    background: var(--surface); border: 1px solid var(--border-strong); font-weight: 500; transition: background .15s, border-color .15s, transform .05s; }
+  .btn:hover { background: var(--surface-2); }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.ghost { border-color: transparent; background: transparent; }
+  .btn.ghost:hover { background: var(--surface-2); }
+  .btn.danger { color: var(--bad); }
+  .btn.sm { height: 30px; padding: 0 10px; font-size: 13px; }
+  .field { width: 100%; height: 38px; padding: 0 12px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 10px; }
+  textarea.field { height: auto; padding: 9px 12px; resize: vertical; }
+  .field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  label.lbl { display: block; font-size: 12.5px; font-weight: 500; color: var(--muted); margin-bottom: 6px; }
+
+  /* ── sign-in ── */
+  #auth { min-height: 100%; display: grid; grid-template-columns: 1.1fr 1fr; }
+  #auth .hero { background: radial-gradient(120% 90% at 20% 10%, #24328f 0%, #121738 45%, #090b14 100%); color: #eef1ff; padding: 56px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; position: relative; }
+  #auth .hero h2 { font-size: 34px; line-height: 1.15; letter-spacing: -.02em; margin: 0 0 14px; max-width: 460px; font-weight: 600; }
+  #auth .hero p { color: #b9c1e8; max-width: 420px; margin: 0; font-size: 15px; }
+  #auth .rings { position: absolute; right: -180px; bottom: -180px; width: 620px; height: 620px; opacity: .5; }
+  #auth .pane { display: flex; align-items: center; justify-content: center; padding: 32px; }
+  #auth form { width: 100%; max-width: 360px; }
+  #auth h1 { font-size: 24px; letter-spacing: -.02em; margin: 0 0 6px; }
+  #auth .stack > * + * { margin-top: 16px; }
+  #authMsg { min-height: 20px; font-size: 13px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -.01em; font-size: 15px; }
+  .brand .mark { width: 30px; height: 30px; border-radius: 9px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; }
+  #auth .hero .brand .mark { background: #fff; color: #1b2575; }
+
+  /* ── shell ── */
+  #app { display: grid; grid-template-columns: 236px 1fr; min-height: 100%; }
+  aside { background: var(--surface); border-right: 1px solid var(--border); padding: 18px 14px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; }
+  aside .brand { padding: 4px 8px 18px; }
+  .nav { display: flex; align-items: center; gap: 11px; height: 38px; padding: 0 11px; border-radius: 10px; color: var(--muted); font-weight: 500; background: none; border: 0; width: 100%; text-align: left; }
+  .nav:hover { background: var(--surface-2); color: var(--text); }
+  .nav.on { background: var(--accent-soft); color: var(--accent); }
+  .nav .count { margin-left: auto; font-size: 12px; background: var(--bad-soft); color: var(--bad); border-radius: 999px; padding: 1px 7px; font-weight: 600; }
+  aside .foot { margin-top: auto; border-top: 1px solid var(--border); padding-top: 12px; display: grid; gap: 4px; }
+  .live { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); padding: 6px 11px; }
+  .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
+  .pulse.on { background: var(--ok); box-shadow: 0 0 0 0 var(--ok); animation: pulse 2s infinite; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 7px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+  .who { font-size: 12.5px; color: var(--muted); padding: 0 11px 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  main { padding: 28px 32px 60px; min-width: 0; max-width: 1480px; width: 100%; }
+  .phead { display: flex; align-items: flex-end; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+  .phead h1 { font-size: 24px; letter-spacing: -.02em; margin: 0; font-weight: 600; }
+  .phead .sub { color: var(--muted); margin-top: 2px; }
+  .phead .sp { flex: 1; }
+  select.field { width: auto; padding-right: 30px; }
+  .banner { background: var(--warn-soft); color: var(--warn); border-radius: 10px; padding: 9px 14px; margin-bottom: 18px; font-weight: 500; font-size: 13px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow); }
+  .card .hd { display: flex; align-items: center; gap: 10px; padding: 16px 18px 0; }
+  .card .hd h3 { margin: 0; font-size: 14px; font-weight: 600; }
+  .card .hd .sub { color: var(--muted); font-size: 12.5px; margin-left: auto; }
+  .card .bd { padding: 14px 18px 18px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 14px; }
+  .kpi { padding: 18px; }
+  .kpi .k { color: var(--muted); font-size: 12.5px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+  .kpi .v { font-size: 32px; font-weight: 600; letter-spacing: -.03em; margin-top: 8px; line-height: 1.1; }
+  .kpi .v small { font-size: 15px; color: var(--muted); font-weight: 500; letter-spacing: 0; }
+  .kpi .d { font-size: 12.5px; color: var(--muted); margin-top: 6px; min-height: 19px; }
+  .kpi .meter { height: 4px; background: var(--idle-soft); border-radius: 4px; margin-top: 12px; overflow: hidden; }
+  .kpi .meter i { display: block; height: 100%; background: var(--ok); border-radius: 4px; }
+  .up { color: var(--ok); } .down { color: var(--bad); }
+
+  .cols { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 14px; margin-bottom: 14px; }
+  .heat { display: grid; grid-template-columns: 34px repeat(24, 1fr); gap: 3px; align-items: center; }
+  .heat .day { font-size: 11.5px; color: var(--muted); }
+  .heat .c { aspect-ratio: 1; border-radius: 4px; background: var(--idle-soft); min-height: 12px; }
+  .heat .h { font-size: 10.5px; color: var(--faint); width: 0; white-space: nowrap; overflow: visible; }
+  .legend { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); margin-top: 12px; }
+  .legend i { width: 14px; height: 14px; border-radius: 4px; display: block; }
+
+  .list { display: grid; }
+  .item { display: flex; align-items: center; gap: 12px; padding: 11px 18px; border-top: 1px solid var(--border); background: none; border-left: 0; border-right: 0; border-bottom: 0; width: 100%; text-align: left; }
+  .item:first-child { border-top: 0; }
+  button.item:hover { background: var(--surface-2); }
+  .item .t { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item .s { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item .r { margin-left: auto; color: var(--muted); font-size: 12.5px; white-space: nowrap; text-align: right; }
+  .badge { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; flex: none; }
+  .badge.bad { background: var(--bad-soft); color: var(--bad); } .badge.warn { background: var(--warn-soft); color: var(--warn); }
+  .badge.info { background: var(--accent-soft); color: var(--accent); } .badge.occ { background: var(--occ-soft); color: var(--occ); }
+  .badge.ok { background: var(--ok-soft); color: var(--ok); }
+  .emptyok { padding: 30px 18px 34px; text-align: center; color: var(--muted); }
+  .emptyok .badge { margin: 0 auto 10px; width: 40px; height: 40px; border-radius: 12px; }
+
+  .pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .pill.occ { background: var(--occ-soft); color: var(--occ); } .pill.clear { background: var(--ok-soft); color: var(--ok); }
+  .pill.off { background: var(--idle-soft); color: var(--muted); } .pill.plain::before { display: none; }
+  .pill.done { background: var(--ok-soft); color: var(--ok); } .pill.failed, .pill.expired { background: var(--bad-soft); color: var(--bad); }
+  .pill.sent, .pill.pending { background: var(--warn-soft); color: var(--warn); }
+
+  .tools { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .search { position: relative; flex: 1; min-width: 200px; max-width: 340px; }
+  .search svg { position: absolute; left: 11px; top: 10px; color: var(--faint); }
+  .search input { padding-left: 36px; }
+  .seg { display: inline-flex; background: var(--surface-2); border-radius: 10px; padding: 3px; gap: 2px; }
+  .seg button { height: 30px; padding: 0 12px; border-radius: 8px; border: 0; background: none; color: var(--muted); font-weight: 500; font-size: 13px; }
+  .seg button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .dev { padding: 16px 18px; text-align: left; width: 100%; transition: transform .15s, box-shadow .15s, border-color .15s; }
+  .dev:hover { transform: translateY(-2px); border-color: var(--border-strong); box-shadow: 0 8px 24px rgba(16,24,40,.10); }
+  .dev.offline .big, .dev.offline .strip { opacity: .55; }
+  .dev .top { display: flex; align-items: flex-start; gap: 10px; }
+  .dev .name { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dev .where { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dev .grow { flex: 1; min-width: 0; }
+  .dev .big { font-size: 22px; font-weight: 600; letter-spacing: -.02em; margin-top: 16px; }
+  .dev .small { color: var(--muted); font-size: 12.5px; min-height: 19px; }
+  .strip { margin-top: 14px; }
+  .strip .cap { display: flex; justify-content: space-between; font-size: 11px; color: var(--faint); margin-top: 4px; }
+  .dev .ft { display: flex; gap: 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--muted); }
+  .dev .ft span { display: inline-flex; align-items: center; gap: 6px; }
+  .sig { display: inline-flex; gap: 2px; align-items: flex-end; height: 12px; }
+  .sig i { width: 3px; background: var(--border-strong); border-radius: 1px; }
+  .sig i.f { background: var(--ok); } .sig.mid i.f { background: var(--warn); } .sig.low i.f { background: var(--bad); }
+  .tag { font-size: 11px; font-weight: 600; color: var(--accent); background: var(--accent-soft); padding: 2px 7px; border-radius: 6px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; color: var(--muted); font-weight: 500; font-size: 12.5px; padding: 10px 18px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 11px 18px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  tbody tr.click:hover { background: var(--surface-2); cursor: pointer; }
+  .scroll { overflow-x: auto; }
+  .empty { padding: 48px 20px; text-align: center; color: var(--muted); }
+
+  /* ── drawer ── */
+  #detail { position: fixed; inset: 0; background: rgba(8,10,16,.45); backdrop-filter: blur(3px); display: flex; justify-content: flex-end; z-index: 30; }
+  #sheet { width: min(620px, 100%); height: 100%; background: var(--bg); box-shadow: var(--shadow-lg); overflow-y: auto; animation: slide .22s ease-out; }
+  @keyframes slide { from { transform: translateX(28px); opacity: 0; } }
+  .dtop { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 20px 24px 14px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-start; }
+  .dtop h2 { margin: 0; font-size: 19px; letter-spacing: -.02em; font-weight: 600; }
+  .dbody { padding: 18px 24px 40px; display: grid; gap: 14px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border-radius: var(--r); overflow: hidden; border: 1px solid var(--border); }
+  .stats div { background: var(--surface); padding: 12px 14px; min-width: 0; }
+  .stats span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 2px; }
+  .stats b { font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .form3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .ctl { display: grid; gap: 10px; }
+  .ctl .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .ctl .row .l { flex: 1; min-width: 150px; } .ctl .row .l small { display: block; color: var(--muted); font-size: 12.5px; }
+  .ctl input.field { width: 84px; }
+  hr.sep { border: 0; border-top: 1px solid var(--border); margin: 2px 0; }
+
+  #toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; z-index: 40; font-weight: 500; box-shadow: var(--shadow-lg); }
+  .center { min-height: 100%; display: grid; place-items: center; padding: 24px; text-align: center; }
+
+  @media (max-width: 1080px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cols { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 760px) {
+    #auth { grid-template-columns: 1fr; } #auth .hero { display: none; }
+    #app { grid-template-columns: 1fr; }
+    aside { position: fixed; bottom: 0; top: auto; left: 0; right: 0; height: auto; flex-direction: row; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); border-right: 0; border-top: 1px solid var(--border); z-index: 20; gap: 2px; }
+    aside .brand, aside .foot .live, aside .foot .who { display: none; }
+    aside .foot { margin: 0; border: 0; padding: 0; display: flex; }
+    .nav { flex-direction: column; gap: 2px; height: 48px; justify-content: center; padding: 0 6px; font-size: 11px; flex: 1; }
+    .nav .count { position: absolute; margin: -26px 0 0 26px; }
+    .nav .txt2 { display: none; }
+    main { padding: 18px 14px 96px; }
+    .kpi .v { font-size: 26px; } .form3, .stats { grid-template-columns: 1fr 1fr; }
+    .heat { gap: 2px; grid-template-columns: 28px repeat(24, 1fr); } .heat .c { border-radius: 2px; min-height: 9px; }
+    .dtop, .dbody { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<section id="auth" class="hidden">
+  <div class="hero">
+    <div class="brand"><span class="mark"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><path d="M7.5 7.5a6.4 6.4 0 0 0 0 9M16.5 7.5a6.4 6.4 0 0 1 0 9M4.6 4.6a10.5 10.5 0 0 0 0 14.8M19.4 4.6a10.5 10.5 0 0 1 0 14.8"/></svg></span>Human Detector</div>
+    <div><h2>Know which rooms are in use, from anywhere.</h2><p>Live presence, detection history and device health for every sensor in your fleet.</p></div>
+    <svg class="rings" viewBox="0 0 600 600" fill="none" stroke="#8ea0ff"><circle cx="300" cy="300" r="60"/><circle cx="300" cy="300" r="120" opacity=".8"/><circle cx="300" cy="300" r="180" opacity=".6"/><circle cx="300" cy="300" r="240" opacity=".4"/><circle cx="300" cy="300" r="298" opacity=".25"/></svg>
+  </div>
+  <div class="pane">
+    <form id="authForm" class="stack">
+      <div><h1>Sign in</h1><div class="muted">Fleet dashboard</div></div>
+      <div><label class="lbl" for="email">Email</label><input class="field" id="email" type="email" autocomplete="username" required></div>
+      <div><label class="lbl" for="password">Password</label><input class="field" id="password" type="password" autocomplete="current-password" minlength="8" required></div>
+      <button class="btn primary" type="submit" style="width:100%;justify-content:center;height:40px">Sign in</button>
+      <button class="btn ghost" type="button" id="signup" style="width:100%;justify-content:center">Create an account</button>
+      <div id="authMsg" class="muted"></div>
+    </form>
+  </div>
+</section>
+
+<section id="pending" class="center hidden">
+  <div style="max-width:400px">
+    <h2 style="margin:0 0 8px">Waiting for approval</h2>
+    <p class="muted">You are signed in as <b id="pendingEmail"></b>, but this email is not on the dashboard allow-list yet.</p>
+    <button class="btn" id="signout2">Sign out</button>
+  </div>
+</section>
+
+<div id="app" class="hidden">
+  <aside>
+    <div class="brand"><span class="mark"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><path d="M7.5 7.5a6.4 6.4 0 0 0 0 9M16.5 7.5a6.4 6.4 0 0 1 0 9M4.6 4.6a10.5 10.5 0 0 0 0 14.8M19.4 4.6a10.5 10.5 0 0 1 0 14.8"/></svg></span>Human Detector</div>
+    <button class="nav" data-view="overview"><svg class="ic" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>Overview<span class="count hidden" id="navAlerts"></span></button>
+    <button class="nav" data-view="devices"><svg class="ic" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9.5 2.5v3.5M14.5 2.5v3.5M9.5 18v3.5M14.5 18v3.5M2.5 9.5H6M2.5 14.5H6M18 9.5h3.5M18 14.5h3.5"/></svg>Devices</button>
+    <button class="nav" data-view="activity"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Activity</button>
+    <div class="foot">
+      <div class="live"><span class="pulse" id="pulse"></span><span id="liveTxt">Connecting…</span></div>
+      <div class="who" id="who"></div>
+      <button class="nav" id="theme"><svg class="ic" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg><span class="txt2">Switch theme</span></button>
+      <button class="nav" id="signout"><svg class="ic" viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l4-4-4-4M14 12H4"/></svg><span class="txt2">Sign out</span></button>
+    </div>
+  </aside>
+  <main id="page"></main>
+</div>
+
+<div id="detail" class="hidden"><div id="sheet" role="dialog" aria-modal="true"></div></div>
+<div id="toast" class="hidden" role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+(function () {
+'use strict';
+const SUPABASE_URL = 'https://wqbkffuyfiagpfyhaiqw.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_uK--vHnY9qA7z9o487KsTA_jvJ-8SEk';   // public key; data is protected by row-level security
+const ONLINE_MS = 150e3, POLL_MS = 30e3, DAY = 864e5, WEAK_DBM = -78;
+const LIGHT_ON = 60;             // radar light reading (0–255) at or above which the room lights count as on
+const EMPTY_LIT_MIN = 15;        // minutes a lit room must be empty before it is flagged
+const DEMO = new URLSearchParams(location.search).has('demo');           // ?demo shows sample data without signing in
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const show = (id, on) => $(id).classList.toggle('hidden', !on);
+const I = {
+  off: '<path d="M4 4l16 16M8.5 8.6a5 5 0 0 0 0 6.8M5.6 5.7a9 9 0 0 0 0 12.6M15.6 15.3a5 5 0 0 0 .8-4.8M18.4 18.3a9 9 0 0 0 1.7-9.8"/>',
+  wifi: '<path d="M2.5 9a14 14 0 0 1 19 0M6 12.7a9 9 0 0 1 12 0M9.3 16.3a4 4 0 0 1 5.4 0"/><circle cx="12" cy="19.3" r=".9" fill="currentColor"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/>',
+  user: '<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>', x: '<path d="M6 6l12 12M18 6 6 18"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
+  sun: '<circle cx="12" cy="12" r="3.8"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/>',
+};
+const ic = n => `<svg class="ic" viewBox="0 0 24 24">${I[n]}</svg>`;
+
+// ───────── theme
+const root = document.documentElement;
+function setTheme(t) { root.dataset.theme = t; try { localStorage.setItem('hd-theme', t); } catch (e) {} }
+(function () { let t = null; try { t = localStorage.getItem('hd-theme'); } catch (e) {}
+  root.dataset.theme = t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); })();
+$('theme').onclick = () => setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark');
+
+// ───────── formatting
+function dur(s) {
+  if (s == null || isNaN(s)) return '–';
+  s = Math.max(0, Math.round(s));
+  if (s < 60) return s + ' s';
+  if (s < 3600) return Math.floor(s / 60) + ' min';
+  if (s < 86400) return Math.floor(s / 3600) + ' h ' + Math.floor(s % 3600 / 60) + ' min';
+  return Math.floor(s / 86400) + ' d ' + Math.floor(s % 86400 / 3600) + ' h';
+}
+const ago = t => t ? dur((Date.now() - new Date(t)) / 1000) + ' ago' : 'never';
+const hm = t => new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+const stamp = t => t ? new Date(t).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '–';
+const online = d => Date.now() - new Date(d.last_seen) < ONLINE_MS;
+const title = d => d.label || d.name;
+const place = d => [d.site, d.room].filter(Boolean).join(' · ') || 'Unassigned';
+const evSecs = e => e.ended_at ? (e.duration_s != null ? e.duration_s : (new Date(e.ended_at) - new Date(e.started_at)) / 1000) : (Date.now() - new Date(e.started_at)) / 1000;
+function bars(rssi) {
+  if (rssi == null) return '';
+  const n = rssi >= -60 ? 4 : rssi >= -70 ? 3 : rssi >= -80 ? 2 : 1;
+  return `<span class="sig ${n >= 3 ? '' : n === 2 ? 'mid' : 'low'}">${[4, 7, 10, 12].map((h, i) => `<i class="${i < n ? 'f' : ''}" style="height:${h}px"></i>`).join('')}</span>`;
+}
+const lightText = v => v == null ? 'No light data' : v >= 150 ? 'Bright' : v >= LIGHT_ON ? 'Lit' : v >= 15 ? 'Dim' : 'Dark';
+const sigText = r => r == null ? '–' : r >= -60 ? 'Excellent' : r >= -70 ? 'Good' : r >= -80 ? 'Fair' : 'Weak';
+function toast(m) { const t = $('toast'); t.textContent = m; show('toast', true); clearTimeout(toast.t); toast.t = setTimeout(() => show('toast', false), 3200); }
+
+// ───────── data sources
+const sb = DEMO ? null : supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const real = {
+  async devices() { const r = await sb.from('devices').select('*').order('site', { nullsFirst: false }).order('name'); if (r.error) throw r.error; return r.data; },
+  async eventsSince(iso) { const r = await sb.from('presence_events').select('id,device_id,started_at,ended_at,duration_s,end_reason').gte('started_at', iso).order('started_at', { ascending: false }).limit(10000); return r.data || []; },
+  async telemetry(id) { const r = await sb.from('telemetry').select('ts,rssi,light').eq('device_id', id).gte('ts', new Date(Date.now() - DAY).toISOString()).order('ts'); return r.data || []; },
+  async log(id) { const r = await sb.from('device_log').select('*').eq('device_id', id).order('ts', { ascending: false }).limit(20); return r.data || []; },
+  async commands(id) { const r = await sb.from('commands').select('*').eq('device_id', id).order('id', { ascending: false }).limit(6); return r.data || []; },
+  async update(id, patch) { return (await sb.from('devices').update(patch).eq('id', id)).error; },
+  async remove(id) { return (await sb.from('devices').delete().eq('id', id)).error; },
+  async send(id, command, value) { return (await sb.from('commands').insert({ device_id: id, command, value })).error; },
+};
+const demo = (function () {
+  let seed = 7; const rnd = () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const now = Date.now(), iso = t => new Date(t).toISOString();
+  const spec = [['Reception', 'Head office', 'Ground floor', -52], ['Boardroom', 'Head office', 'First floor', -61], ['Open plan east', 'Head office', 'First floor', -66],
+    ['Kitchen', 'Head office', 'Ground floor', -73], ['Server room', 'Head office', 'Basement', -82], ['Workshop', 'Warehouse', 'Bay 2', -69],
+    ['Dispatch office', 'Warehouse', 'Bay 1', -58], [null, null, null, -64]];
+  const devs = spec.map((s, i) => ({ id: 'd' + i, mac: '3C:71:BF:11:0' + i + ':F0', name: 'human-detector-110' + i + 'f0', label: s[0], site: s[1], room: s[2], notes: null,
+    board: 'ESP32 DevKit V1', fw_version: '2026.10.2', ip: '192.168.0.' + (50 + i), rssi: s[3], uptime_s: 3600 * (5 + i * 31), free_heap: 180000 + i * 900,
+    presence: false, presence_since: null, distance_cm: null, light: [182, 20, 140, 96, 0, 160, 150, 75][i], time_synced: i !== 3, clock_offset_ms: 2100 + i * 90, last_time_sync: iso(now - 9e5 * (i + 1)),
+    last_boot: iso(now - 36e5 * (5 + i * 31)), first_seen: iso(now - DAY * 20), last_seen: iso(i === 4 ? now - 36e5 * 3.2 : now - 2e4) }));
+  const events = []; let id = 1;
+  devs.forEach((d, di) => { for (let day = 6; day >= 0; day--) {
+    const base = new Date(now - day * DAY); base.setHours(0, 0, 0, 0); const dow = base.getDay();
+    const n = (dow === 0 || dow === 6) ? Math.floor(rnd() * 3) : 6 + Math.floor(rnd() * 9);
+    for (let k = 0; k < n; k++) { const st = base.getTime() + (7 + rnd() * 11.5) * 36e5, len = (120 + rnd() * rnd() * 4200) | 0;
+      if (st > now || (di === 4 && st > now - 36e5 * 3.2)) continue;
+      const end = st + len * 1000; if (end > now - 18e5) continue;
+      events.push({ id: id++, device_id: d.id, started_at: iso(st), ended_at: iso(end), duration_s: len, end_reason: 'cleared' }); } } });
+  [0, 2, 6].forEach((i, k) => { const st = now - (4 + k * 13) * 6e4; devs[i].presence = true; devs[i].presence_since = iso(st); devs[i].distance_cm = 140 + k * 90;
+    events.push({ id: id++, device_id: devs[i].id, started_at: iso(st), ended_at: null, duration_s: null, end_reason: null }); });
+  events.sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
+  const cmds = {};
+  return {
+    async devices() { return devs; }, async eventsSince(t) { return events.filter(e => e.started_at >= t); },
+    async telemetry(i) { const d = devs.find(x => x.id === i), o = []; for (let k = 287; k >= 0; k--) { const hr = new Date(now - k * 3e5).getHours(), day = hr >= 7 && hr < 18;
+        o.push({ ts: iso(now - k * 3e5), rssi: Math.round(d.rssi + Math.sin(k / 17) * 3 + (rnd() - .5) * 4), light: Math.max(0, Math.round((day ? d.light : d.light * 0.08) + (rnd() - .5) * 10)) }); } return o; },
+    async log(i) { const d = devs.find(x => x.id === i); return [{ ts: d.last_time_sync, kind: 'time_sync', detail: { offset_ms: d.clock_offset_ms } }, { ts: d.last_boot, kind: 'boot', detail: { fw: d.fw_version, ip: d.ip, rssi: d.rssi } }]; },
+    async commands(i) { return cmds[i] || []; },
+    async update(i, p) { Object.assign(devs.find(x => x.id === i), p); return null; },
+    async remove(i) { devs.splice(devs.findIndex(x => x.id === i), 1); return null; },
+    async send(i, command, value) { (cmds[i] = cmds[i] || []).unshift({ id: Date.now(), command, value, status: 'pending', created_at: iso(Date.now()), result: 'demo: not sent' }); return null; },
+  };
+})();
+const api = DEMO ? demo : real;
+
+// ───────── state
+const S = { view: 'overview', devices: [], week: [], site: '', q: '', status: 'all', openId: null };
+const inSite = d => !S.site || d.site === S.site;
+const devById = id => S.devices.find(d => d.id === id);
+function todayOf(id) { const m = new Date(); m.setHours(0, 0, 0, 0); const rows = S.week.filter(e => e.device_id === id && new Date(e.started_at) >= m); return { count: rows.length, secs: rows.reduce((a, e) => a + evSecs(e), 0) }; }
+function attention() {
+  const out = [];
+  S.devices.filter(inSite).forEach(d => {
+    if (!online(d)) out.push({ d, cls: 'bad', icon: 'off', t: 'Offline', s: 'Last report ' + ago(d.last_seen) });
+    else {
+      if (d.rssi != null && d.rssi < WEAK_DBM) out.push({ d, cls: 'warn', icon: 'wifi', t: 'Weak Wi-Fi signal', s: d.rssi + ' dBm' });
+      if (!d.time_synced) out.push({ d, cls: 'warn', icon: 'clock', t: 'Clock not synced', s: 'No NTP sync since start-up' });
+      if (!d.presence && d.light != null && d.light >= LIGHT_ON) {
+        const last = S.week.find(e => e.device_id === d.id), idle = last ? (Date.now() - new Date(last.ended_at || Date.now())) / 6e4 : Infinity;
+        if (idle >= EMPTY_LIT_MIN) out.push({ d, cls: 'warn', icon: 'sun', t: 'Lights on, room empty', s: isFinite(idle) ? 'Empty for ' + dur(idle * 60) : 'No one detected this week' });
+      }
+    }
+    if (!d.label) out.push({ d, cls: 'info', icon: 'spark', t: 'New device needs setup', s: 'Give it a name, site and room' });
+  });
+  return out;
+}
+
+// ───────── auth + boot
+let poll = null, rt = null;
+async function route() {
+  clearInterval(poll);
+  if (DEMO) { $('who').textContent = 'Demo data'; setLive(false, 'Demo mode'); show('app', true); await refresh(); return; }
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { show('auth', true); show('app', false); show('pending', false); return; }
+  const { data: allow } = await sb.from('dashboard_users').select('email').limit(1);
+  if (!allow || !allow.length) { $('pendingEmail').textContent = session.user.email; show('pending', true); show('auth', false); show('app', false); return; }
+  $('who').textContent = session.user.email; show('app', true); show('auth', false); show('pending', false);
+  await refresh(); poll = setInterval(refresh, POLL_MS); subscribe();
+}
+function setLive(on, txt) { $('pulse').classList.toggle('on', on); $('liveTxt').textContent = txt; }
+function subscribe() {
+  if (rt) return; let pending = null; const soon = () => { clearTimeout(pending); pending = setTimeout(refresh, 400); };
+  rt = sb.channel('fleet')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'devices' }, soon)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'presence_events' }, soon)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'commands' }, soon)
+    .subscribe(st => setLive(st === 'SUBSCRIBED', st === 'SUBSCRIBED' ? 'Live' : 'Updating every 30 s'));
+}
+if (!DEMO) {
+  $('authForm').addEventListener('submit', async e => { e.preventDefault(); $('authMsg').textContent = 'Signing in…';
+    const { error } = await sb.auth.signInWithPassword({ email: $('email').value.trim(), password: $('password').value });
+    $('authMsg').textContent = error ? error.message : ''; if (!error) route(); });
+  $('signup').addEventListener('click', async () => { if (!$('authForm').reportValidity()) return; $('authMsg').textContent = 'Creating account…';
+    const { data, error } = await sb.auth.signUp({ email: $('email').value.trim(), password: $('password').value });
+    $('authMsg').textContent = error ? error.message : data.session ? '' : 'Account created. Open the confirmation link in your email, then sign in.'; if (data && data.session) route(); });
+  const out = async () => { await sb.auth.signOut(); if (rt) { sb.removeChannel(rt); rt = null; } closeDetail(); route(); };
+  $('signout').onclick = out; $('signout2').onclick = out;
+} else $('signout').classList.add('hidden');
+
+async function refresh() {
+  try {
+    const [dv, wk] = await Promise.all([api.devices(), api.eventsSince(new Date(Date.now() - 7 * DAY).toISOString())]);
+    S.devices = dv; S.week = wk; render(); if (S.openId) drawDetail(false);
+  } catch (e) { toast('Update failed: ' + (e.message || e)); }
+}
+
+// ───────── pages
+document.querySelectorAll('.nav[data-view]').forEach(b => b.onclick = () => { S.view = b.dataset.view; render(); scrollTo(0, 0); });
+function siteSelect() {
+  const sites = [...new Set(S.devices.map(d => d.site).filter(Boolean))].sort();
+  return sites.length ? `<select class="field" id="site" aria-label="Site"><option value="">All sites</option>${sites.map(s => `<option ${S.site === s ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select>` : '';
+}
+function strip(events, h) {
+  const W = 300, t0 = Date.now() - DAY;
+  const r = events.map(e => { const a = Math.max(t0, new Date(e.started_at)), b = e.ended_at ? new Date(e.ended_at) : Date.now(); if (b < t0) return '';
+    return `<rect x="${((a - t0) / DAY * W).toFixed(1)}" width="${Math.max(1.5, (b - a) / DAY * W).toFixed(1)}" height="${h}" rx="1.5" fill="var(--occ)"/>`; }).join('');
+  return `<svg viewBox="0 0 ${W} ${h}" preserveAspectRatio="none" style="display:block;width:100%;height:${h}px"><rect width="${W}" height="${h}" rx="3" fill="var(--idle-soft)"/>${r}</svg>`;
+}
+function render() {
+  document.querySelectorAll('.nav[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === S.view));
+  const al = attention().filter(a => a.cls !== 'info').length; $('navAlerts').textContent = al; show('navAlerts', al > 0);
+  const keep = document.activeElement && document.activeElement.id === 'q';
+  $('page').innerHTML = (DEMO ? '<div class="banner">Demo data. These devices and events are samples, not your fleet.</div>' : '') + ({ overview: pageOverview, devices: pageDevices, activity: pageActivity }[S.view])();
+  const site = $('site'); if (site) site.onchange = () => { S.site = site.value; render(); };
+  const q = $('q'); if (q) { q.oninput = () => { S.q = q.value; render(); }; if (keep) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }
+  document.querySelectorAll('[data-status]').forEach(b => b.onclick = () => { S.status = b.dataset.status; render(); });
+  document.querySelectorAll('[data-open]').forEach(b => b.onclick = () => { S.openId = b.dataset.open; drawDetail(true); });
+}
+function pageOverview() {
+  const devs = S.devices.filter(inSite), ids = new Set(devs.map(d => d.id)), wk = S.week.filter(e => ids.has(e.device_id));
+  const on = devs.filter(online), occ = on.filter(d => d.presence);
+  const mid = new Date(); mid.setHours(0, 0, 0, 0);
+  const td = wk.filter(e => new Date(e.started_at) >= mid), yd = wk.filter(e => { const t = new Date(e.started_at); return t >= mid - DAY && t <= Date.now() - DAY; });
+  const delta = td.length - yd.length, secs = td.reduce((a, e) => a + evSecs(e), 0);
+  const kpi = (k, v, d, extra) => `<div class="card kpi"><div class="k">${k}</div><div class="v num">${v}</div><div class="d">${d}</div>${extra || ''}</div>`;
+  // heatmap: occupied minutes per hour, summed over devices
+  const cells = Array.from({ length: 7 }, () => new Array(24).fill(0)), day0 = mid.getTime() - 6 * DAY;
+  wk.forEach(e => { let a = Math.max(day0, new Date(e.started_at).getTime()); const b = e.ended_at ? new Date(e.ended_at).getTime() : Date.now();
+    while (a < b) { const hEnd = Math.floor(a / 36e5) * 36e5 + 36e5, to = Math.min(b, hEnd), dt = new Date(a), di = Math.floor((new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()) - day0) / DAY + .01);
+      if (di >= 0 && di < 7) cells[di][dt.getHours()] += (to - a) / 6e4; a = to; } });
+  const max = Math.max(1, ...cells.flat());
+  const heat = cells.map((row, i) => `<div class="day">${new Date(day0 + i * DAY).toLocaleDateString([], { weekday: 'short' })}</div>` + row.map((v, h) =>
+    `<div class="c" title="${Math.round(v)} occupied minutes, ${String(h).padStart(2, '0')}:00" style="${v > 0 ? `background:color-mix(in srgb, var(--occ) ${Math.round(18 + 82 * v / max)}%, var(--idle-soft))` : ''}"></div>`).join('')).join('')
+    + '<div></div>' + Array.from({ length: 24 }, (_, h) => `<div class="h">${h % 6 === 0 ? String(h).padStart(2, '0') : ''}</div>`).join('');
+  const att = attention();
+  const recent = wk.slice(0, 8);
+  return `<div class="phead"><div><h1>Overview</h1><div class="sub">${new Date().toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' })}</div></div><div class="sp"></div>${siteSelect()}</div>
+  <div class="kpis">
+    ${kpi('Devices online', `${on.length}<small> of ${devs.length}</small>`, devs.length - on.length ? `<span class="down">${devs.length - on.length} offline</span>` : 'All reporting', `<div class="meter"><i style="width:${devs.length ? on.length / devs.length * 100 : 0}%"></i></div>`)}
+    ${kpi('Occupied now', occ.length, occ.length ? esc(occ.slice(0, 2).map(title).join(', ')) + (occ.length > 2 ? ` +${occ.length - 2}` : '') : 'No rooms in use')}
+    ${kpi('Detections today', td.length, delta === 0 ? 'Same as this time yesterday' : `<span class="${delta > 0 ? 'up' : 'down'}">${delta > 0 ? '+' : ''}${delta}</span> vs this time yesterday`)}
+    ${kpi('Occupied time today', dur(secs), 'Across all rooms')}
+  </div>
+  <div class="cols">
+    <div class="card"><div class="hd"><h3>When rooms are in use</h3><span class="sub">Last 7 days</span></div><div class="bd"><div class="heat">${heat}</div>
+      <div class="legend">Less<i style="background:var(--idle-soft)"></i><i style="background:color-mix(in srgb, var(--occ) 35%, var(--idle-soft))"></i><i style="background:color-mix(in srgb, var(--occ) 65%, var(--idle-soft))"></i><i style="background:var(--occ)"></i>More</div></div></div>
+    <div class="card"><div class="hd"><h3>Needs attention</h3><span class="sub">${att.length || ''}</span></div><div class="list" style="margin-top:8px">${att.length ? att.slice(0, 6).map(a =>
+      `<button class="item" data-open="${a.d.id}"><span class="badge ${a.cls}">${ic(a.icon)}</span><div style="min-width:0"><div class="t">${esc(a.t)}</div><div class="s">${esc(title(a.d))} · ${esc(a.s)}</div></div></button>`).join('')
+      : `<div class="emptyok"><div class="badge ok">${ic('check')}</div>Everything is healthy</div>`}</div></div>
+  </div>
+  <div class="cols">
+    <div class="card"><div class="hd"><h3>Rooms right now</h3></div><div class="list" style="margin-top:8px">${devs.length ? devs.map(d => { const up = online(d);
+      return `<button class="item" data-open="${d.id}"><div style="min-width:0;flex:1"><div class="t">${esc(title(d))}</div><div class="s">${esc(place(d))}</div></div>
+        <div style="width:34%;min-width:80px">${strip(S.week.filter(e => e.device_id === d.id), 8)}</div>
+        <span class="pill ${!up ? 'off' : d.presence ? 'occ' : 'clear'}">${!up ? 'Offline' : d.presence ? dur((Date.now() - new Date(d.presence_since)) / 1000) : 'Clear'}</span></button>`; }).join('')
+      : '<div class="empty">No devices yet. A device appears here the first time it reports.</div>'}</div></div>
+    <div class="card"><div class="hd"><h3>Latest detections</h3></div><div class="list" style="margin-top:8px">${recent.length ? recent.map(e => { const d = devById(e.device_id); if (!d) return '';
+      return `<button class="item" data-open="${d.id}"><span class="badge ${e.ended_at ? 'info' : 'occ'}">${ic('user')}</span><div style="min-width:0"><div class="t">${esc(title(d))}</div><div class="s">${e.ended_at ? 'Occupied for ' + dur(evSecs(e)) : 'Occupied now'}</div></div><div class="r num">${hm(e.started_at)}</div></button>`; }).join('')
+      : '<div class="empty">No detections in the last 7 days.</div>'}</div></div>
+  </div>`;
+}
+function pageDevices() {
+  const q = S.q.trim().toLowerCase();
+  const list = S.devices.filter(inSite).filter(d => !q || [title(d), d.name, d.site, d.room, d.mac].join(' ').toLowerCase().includes(q))
+    .filter(d => S.status === 'all' || (S.status === 'offline' ? !online(d) : online(d) && (S.status === 'occupied') === !!d.presence));
+  const seg = ['all', 'occupied', 'clear', 'offline'].map(s => `<button class="${S.status === s ? 'on' : ''}" data-status="${s}">${s[0].toUpperCase() + s.slice(1)}</button>`).join('');
+  return `<div class="phead"><div><h1>Devices</h1><div class="sub">${S.devices.length} registered</div></div><div class="sp"></div>${siteSelect()}</div>
+  <div class="tools"><div class="search">${ic('search')}<input class="field" id="q" placeholder="Search name, room or MAC" value="${esc(S.q)}" aria-label="Search devices"></div><div class="seg">${seg}</div></div>
+  ${list.length ? `<div class="grid">${list.map(d => { const up = online(d), st = todayOf(d.id);
+    return `<button class="card dev ${up ? '' : 'offline'}" data-open="${d.id}">
+      <div class="top"><div class="grow"><div class="name">${esc(title(d))}</div><div class="where">${esc(place(d))}</div></div>
+        ${d.label ? '' : '<span class="tag">New</span>'}<span class="pill ${!up ? 'off' : d.presence ? 'occ' : 'clear'}">${!up ? 'Offline' : d.presence ? 'Occupied' : 'Clear'}</span></div>
+      <div class="big num">${!up ? ago(d.last_seen) : d.presence ? dur((Date.now() - new Date(d.presence_since)) / 1000) : st.count + (st.count === 1 ? ' detection' : ' detections')}</div>
+      <div class="small">${!up ? 'since last report' : d.presence ? 'in the room' + (d.distance_cm ? ` · ${(d.distance_cm / 100).toFixed(1)} m away` : '') : 'today · ' + dur(st.secs) + ' occupied'}</div>
+      <div class="strip">${strip(S.week.filter(e => e.device_id === d.id), 10)}<div class="cap"><span>24 h ago</span><span>now</span></div></div>
+      <div class="ft"><span>${bars(d.rssi)}${d.rssi == null ? 'No signal data' : sigText(d.rssi)}</span><span style="${d.time_synced ? '' : 'color:var(--warn)'}">${ic('clock')}${d.time_synced ? 'Synced' : 'Not synced'}</span>${d.light == null ? '' : `<span>${ic('sun')}${lightText(d.light)}</span>`}</div>
+    </button>`; }).join('')}</div>` : `<div class="card empty">${S.devices.length ? 'No devices match these filters.' : 'No devices yet. A device appears here the first time it reports.'}</div>`}`;
+}
+function pageActivity() {
+  const ids = new Set(S.devices.filter(inSite).map(d => d.id)), rows = S.week.filter(e => ids.has(e.device_id)).slice(0, 250);
+  return `<div class="phead"><div><h1>Activity</h1><div class="sub">Detections in the last 7 days</div></div><div class="sp"></div>${siteSelect()}</div>
+  <div class="card scroll">${rows.length ? `<table><thead><tr><th>Room</th><th>Location</th><th>Started</th><th>Ended</th><th>Duration</th><th>Ended by</th></tr></thead><tbody>${rows.map(e => { const d = devById(e.device_id);
+    return `<tr class="click" data-open="${d.id}"><td style="font-weight:500">${esc(title(d))}</td><td class="muted">${esc(place(d))}</td><td class="num">${stamp(e.started_at)}</td><td class="num">${e.ended_at ? hm(e.ended_at) : '<span class="pill occ">Ongoing</span>'}</td><td class="num">${dur(evSecs(e))}</td><td class="muted">${esc(e.end_reason || '')}</td></tr>`; }).join('')}</tbody></table>`
+    : '<div class="empty">No detections recorded yet.</div>'}</div>`;
+}
+
+// ───────── device drawer
+function closeDetail() { S.openId = null; show('detail', false); }
+$('detail').addEventListener('click', e => { if (e.target.id === 'detail') closeDetail(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+function chart(rows, key, lo, hi, ticks, unit, color, gid) {
+  const p = rows.filter(r => r[key] != null); if (p.length < 2) return '<div class="muted">Not enough data yet. One sample is stored every 5 minutes.</div>';
+  const W = 560, H = 120, t0 = Date.now() - DAY, x = t => (new Date(t) - t0) / DAY * W, y = v => H - (Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo) * H;
+  const line = p.map((r, i) => (i ? 'L' : 'M') + x(r.ts).toFixed(1) + ' ' + y(r[key]).toFixed(1)).join(' ');
+  const grid = ticks.map(v => `<line x1="0" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="var(--border)"/><text x="2" y="${y(v) - 4}" fill="var(--faint)" font-size="10">${v}${unit}</text>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="display:block;width:100%;height:120px"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".28"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>${grid}
+    <path d="${line} L${x(p[p.length - 1].ts).toFixed(1)} ${H} L${x(p[0].ts).toFixed(1)} ${H} Z" fill="url(#${gid})"/><path d="${line}" fill="none" stroke="${color}" stroke-width="1.8" vector-effect="non-scaling-stroke"/></svg>`;
+}
+const LOG = { boot: 'Started up', wifi_connect: 'Wi-Fi reconnected', time_sync: 'Clock synced over NTP', offline: 'Stopped reporting' };
+async function drawDetail(fresh) {
+  const d = devById(S.openId); if (!d) return closeDetail();
+  const f = document.activeElement && document.activeElement.id; if (!fresh && f && /^(f_|c_)/.test(f)) return;
+  const [tel, log, cmd] = await Promise.all([api.telemetry(d.id), api.log(d.id), api.commands(d.id)]);
+  if (S.openId !== d.id) return;
+  const up = online(d), st = todayOf(d.id), ev = S.week.filter(e => e.device_id === d.id), sheet = $('sheet'), keep = sheet.scrollTop;
+  const stat = (k, v) => `<div><span>${k}</span><b class="num">${v}</b></div>`;
+  const row = (t, s, ctl) => `<div class="row"><div class="l">${t}<small>${s}</small></div>${ctl}</div>`;
+  sheet.innerHTML = `
+  <div class="dtop"><div style="flex:1;min-width:0"><h2>${esc(title(d))}</h2><div class="muted" style="font-size:13px">${esc(place(d))}</div></div>
+    <span class="pill ${!up ? 'off' : d.presence ? 'occ' : 'clear'}">${!up ? 'Offline' : d.presence ? 'Occupied' : 'Clear'}</span>
+    <button class="btn ghost sm" id="close" aria-label="Close">${ic('x')}</button></div>
+  <div class="dbody">
+    ${d.label ? '' : `<div class="card" style="border-color:var(--accent);background:var(--accent-soft)"><div class="bd" style="padding-top:14px"><b>New device.</b> Give it a name, site and room below so it is easy to find.</div></div>`}
+    <div class="stats">
+      ${stat('Status', !up ? 'Offline' : d.presence ? 'Occupied ' + dur((Date.now() - new Date(d.presence_since)) / 1000) : 'Clear')}
+      ${stat('Last report', ago(d.last_seen))}${stat('Detections today', st.count)}
+      ${stat('Occupied today', dur(st.secs))}${stat('Wi-Fi signal', d.rssi == null ? '–' : `${sigText(d.rssi)} · ${d.rssi} dBm`)}
+      ${stat('Clock', d.time_synced ? 'Synced' : '<span style="color:var(--warn)">Not synced</span>')}
+      ${stat('Last NTP sync', d.last_time_sync ? ago(d.last_time_sync) : '–')}${stat('Uptime', dur(d.uptime_s))}${stat('Last start', d.last_boot ? ago(d.last_boot) : '–')}
+      ${stat('Light level', d.light == null ? '–' : `${lightText(d.light)} · ${d.light} / 255`)}${stat('Room lights', d.light == null ? '–' : d.light >= LIGHT_ON ? 'On' : 'Off')}${stat('Target distance', up && d.presence && d.distance_cm ? (d.distance_cm / 100).toFixed(1) + ' m' : '–')}
+    </div>
+    <div class="card"><div class="hd"><h3>Occupancy</h3><span class="sub">Last 24 hours</span></div><div class="bd">${strip(ev, 26)}<div class="strip"><div class="cap"><span>24 h ago</span><span>12 h</span><span>now</span></div></div></div></div>
+    <div class="card"><div class="hd"><h3>Wi-Fi signal</h3><span class="sub">Last 24 hours</span></div><div class="bd">${chart(tel, 'rssi', -95, -40, [-50, -70, -90], ' dBm', 'var(--accent)', 'gs')}</div></div>
+    <div class="card"><div class="hd"><h3>Light level</h3><span class="sub">Last 24 hours · 0–255</span></div><div class="bd">${chart(tel, 'light', 0, 255, [LIGHT_ON, 150, 240], '', 'var(--warn)', 'gl')}</div></div>
+
+    <div class="card"><div class="hd"><h3>Name and location</h3></div><div class="bd">
+      <div class="form3"><div><label class="lbl" for="f_label">Name</label><input class="field" id="f_label" value="${esc(d.label || '')}" placeholder="e.g. Boardroom"></div>
+        <div><label class="lbl" for="f_site">Site</label><input class="field" id="f_site" value="${esc(d.site || '')}" placeholder="e.g. Head office"></div>
+        <div><label class="lbl" for="f_room">Room or floor</label><input class="field" id="f_room" value="${esc(d.room || '')}"></div></div>
+      <div style="margin-top:12px"><label class="lbl" for="f_notes">Notes</label><textarea class="field" id="f_notes" rows="2">${esc(d.notes || '')}</textarea></div>
+      <div style="margin-top:12px"><button class="btn primary" id="save">Save changes</button></div></div></div>
+
+    <div class="card"><div class="hd"><h3>Remote control</h3><span class="sub">Runs within about a minute</span></div><div class="bd ctl">
+      ${row('Absence delay', 'Seconds with nobody detected before the room shows as clear', `<input class="field num" id="c_timeout" type="number" min="0" max="3600" value="10" aria-label="Absence delay in seconds"><button class="btn sm" data-cmd="set_timeout" data-in="c_timeout">Apply</button>`)}
+      <hr class="sep">${row('Moving range', 'Furthest gate for moving targets (1 gate = 0.75 m)', `<input class="field num" id="c_move" type="number" min="2" max="8" value="8" aria-label="Max moving gate"><button class="btn sm" data-cmd="set_max_move_gate" data-in="c_move">Apply</button>`)}
+      <hr class="sep">${row('Still range', 'Furthest gate for people sitting still', `<input class="field num" id="c_still" type="number" min="2" max="8" value="8" aria-label="Max still gate"><button class="btn sm" data-cmd="set_max_still_gate" data-in="c_still">Apply</button>`)}
+      <hr class="sep">${row('Engineering mode', 'Per-gate energy readings for tuning', `<button class="btn sm" data-cmd="engineering_mode" data-v="1">On</button><button class="btn sm" data-cmd="engineering_mode" data-v="0">Off</button>`)}
+      <hr class="sep">${row('Radar Bluetooth', 'The radar module\'s own setup interface', `<button class="btn sm" data-cmd="radar_bluetooth" data-v="1">On</button><button class="btn sm" data-cmd="radar_bluetooth" data-v="0">Off</button>`)}
+      <hr class="sep">${row('Restart', 'Reboot the radar module or the whole device', `<button class="btn sm" data-cmd="radar_restart">Radar</button><button class="btn sm" data-cmd="restart">Device</button>`)}
+      ${cmd.length ? `<hr class="sep"><div class="scroll"><table>${cmd.map(c => `<tr><td class="muted num" style="padding-left:0">${stamp(c.created_at)}</td><td>${esc(c.command)}${c.value != null ? ' = ' + esc(c.value) : ''}</td><td><span class="pill plain ${esc(c.status)}">${esc(c.status)}</span></td><td class="muted">${esc(c.result || '')}</td></tr>`).join('')}</table></div>` : ''}
+    </div></div>
+
+    <div class="card"><div class="hd"><h3>Detections</h3><span class="sub">Last 7 days</span></div>${ev.length ? `<div class="scroll" style="margin-top:6px"><table><thead><tr><th>Started</th><th>Ended</th><th>Duration</th><th>Ended by</th></tr></thead><tbody>${ev.slice(0, 40).map(e =>
+      `<tr><td class="num">${stamp(e.started_at)}</td><td class="num">${e.ended_at ? hm(e.ended_at) : '<span class="pill occ">Ongoing</span>'}</td><td class="num">${dur(evSecs(e))}</td><td class="muted">${esc(e.end_reason || '')}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">No detections recorded yet.</div>'}</div>
+
+    <div class="card"><div class="hd"><h3>Device log</h3></div>${log.length ? `<div class="list" style="margin-top:8px">${log.map(l => { const x = l.detail || {};
+      const det = l.kind === 'time_sync' && x.offset_ms != null ? `Report delay ${(x.offset_ms / 1000).toFixed(1)} s` : [x.rssi != null ? x.rssi + ' dBm' : '', x.ip || '', x.fw ? 'Firmware ' + x.fw : ''].filter(Boolean).join(' · ');
+      return `<div class="item"><span class="badge ${l.kind === 'offline' ? 'bad' : 'info'}">${ic(l.kind === 'time_sync' ? 'clock' : l.kind === 'offline' ? 'off' : l.kind === 'wifi_connect' ? 'wifi' : 'spark')}</span><div style="min-width:0"><div class="t">${esc(LOG[l.kind] || l.kind)}</div><div class="s">${esc(det)}</div></div><div class="r num">${stamp(l.ts)}</div></div>`; }).join('')}</div>` : '<div class="empty">Nothing logged yet.</div>'}</div>
+
+    <div class="card"><div class="hd"><h3>Hardware</h3></div><div class="bd"><div class="stats">
+      ${stat('Device ID', esc(d.name))}${stat('MAC address', esc(d.mac))}${stat('Board', esc(d.board || '–'))}
+      ${stat('IP address', esc(d.ip || '–'))}${stat('Firmware', esc(d.fw_version || '–'))}${stat('Free memory', d.free_heap ? Math.round(d.free_heap / 1024) + ' kB' : '–')}</div>
+      <div style="margin-top:14px"><button class="btn danger sm" id="remove">Remove device and its history</button></div></div></div>
+  </div>`;
+  show('detail', true); sheet.scrollTop = fresh ? 0 : keep;
+  $('close').onclick = closeDetail;
+  $('save').onclick = async () => { const v = i => $(i).value.trim() || null;
+    const err = await api.update(d.id, { label: v('f_label'), site: v('f_site'), room: v('f_room'), notes: v('f_notes') });
+    toast(err ? 'Save failed: ' + err.message : 'Saved'); if (!err) { document.activeElement.blur(); refresh(); } };
+  $('remove').onclick = async () => { if (!confirm(`Remove "${title(d)}" and all of its history? This cannot be undone. A device that is still running will register itself again.`)) return;
+    const err = await api.remove(d.id); toast(err ? 'Remove failed: ' + err.message : 'Removed'); if (!err) { closeDetail(); refresh(); } };
+  sheet.querySelectorAll('[data-cmd]').forEach(b => b.onclick = async () => {
+    const command = b.dataset.cmd, input = b.dataset.in && $(b.dataset.in);
+    if (input && !input.reportValidity()) return;
+    if (command === 'restart' && !confirm(`Restart "${title(d)}"? It will be offline for about 20 seconds.`)) return;
+    const err = await api.send(d.id, command, input ? Number(input.value) : b.dataset.v != null ? Number(b.dataset.v) : null);
+    toast(err ? 'Could not queue: ' + err.message : 'Queued. It runs at the device\'s next report.'); if (!err) { document.activeElement.blur(); drawDetail(false); } });
+}
+
+if (!DEMO) sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT') route(); });
+setInterval(() => { if (!$('app').classList.contains('hidden') && !(document.activeElement && document.activeElement.id === 'q')) render(); }, 20e3);   // keep "x min ago" fresh
+route();
+})();
+</script>
+</body>
+</html>
