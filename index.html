@@ -264,7 +264,7 @@
 const SUPABASE_URL = 'https://wqbkffuyfiagpfyhaiqw.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_uK--vHnY9qA7z9o487KsTA_jvJ-8SEk';   // public key; data is protected by row-level security
 const ONLINE_MS = 150e3, POLL_MS = 30e3, DAY = 864e5, WEAK_DBM = -78;
-const LIGHT_ON = 3;              // radar light reading (0–255) at or above which the room counts as lit. Measured: 0–1 dark, about 6 with room lights on, 9–21 in daylight
+const LIGHT_ON = 8;              // radar light reading (0–255) at or above which the room counts as lit. Measured: 0–1 dark, about 6 with room lights on, 9–21 in daylight
 const EMPTY_LIT_MIN = 15;        // minutes a lit room must be empty before it is flagged
 const DEMO = new URLSearchParams(location.search).has('demo');           // ?demo shows sample data without signing in
 
@@ -550,7 +550,7 @@ async function drawDetail(fresh) {
     </div>
     <div class="card"><div class="hd"><h3>Occupancy</h3><span class="sub">Last 24 hours</span></div><div class="bd">${strip(ev, 26)}<div class="strip"><div class="cap"><span>24 h ago</span><span>12 h</span><span>now</span></div></div></div></div>
     <div class="card"><div class="hd"><h3>Wi-Fi signal</h3><span class="sub">Last 24 hours</span></div><div class="bd">${chart(tel, 'rssi', -95, -40, [-50, -70, -90], ' dBm', 'var(--accent)', 'gs')}</div></div>
-    <div class="card"><div class="hd"><h3>Light level</h3><span class="sub">Last 24 hours · raw sensor value</span></div><div class="bd">${chart(tel, 'light', 0, Math.max(30, ...tel.map(r => r.light || 0)), [LIGHT_ON, 10, 20], '', 'var(--warn)', 'gl')}</div></div>
+    <div class="card"><div class="hd"><h3>Light level</h3><span class="sub">Last 24 hours · raw sensor value</span></div><div class="bd">${chart(tel, 'light', 0, Math.max(30, ...tel.map(r => r.light || 0)), [LIGHT_ON, 20], '', 'var(--warn)', 'gl')}</div></div>
 
     <div class="card"><div class="hd"><h3>Name and location</h3></div><div class="bd">
       <div class="form3"><div><label class="lbl" for="f_label">Name</label><input class="field" id="f_label" value="${esc(d.label || '')}" placeholder="e.g. Boardroom"></div>
