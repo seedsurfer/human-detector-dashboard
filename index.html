@@ -264,7 +264,7 @@
 const SUPABASE_URL = 'https://wqbkffuyfiagpfyhaiqw.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_uK--vHnY9qA7z9o487KsTA_jvJ-8SEk';   // public key; data is protected by row-level security
 const ONLINE_MS = 150e3, POLL_MS = 30e3, DAY = 864e5, WEAK_DBM = -78;
-const LIGHT_ON = 60;             // radar light reading (0–255) at or above which the room lights count as on
+const LIGHT_ON = 3;              // radar light reading (0–255) at or above which the room counts as lit. Measured: 0–1 dark, about 6 with room lights on, 9–21 in daylight
 const EMPTY_LIT_MIN = 15;        // minutes a lit room must be empty before it is flagged
 const DEMO = new URLSearchParams(location.search).has('demo');           // ?demo shows sample data without signing in
 
@@ -311,7 +311,7 @@ function bars(rssi) {
   const n = rssi >= -60 ? 4 : rssi >= -70 ? 3 : rssi >= -80 ? 2 : 1;
   return `<span class="sig ${n >= 3 ? '' : n === 2 ? 'mid' : 'low'}">${[4, 7, 10, 12].map((h, i) => `<i class="${i < n ? 'f' : ''}" style="height:${h}px"></i>`).join('')}</span>`;
 }
-const lightText = v => v == null ? 'No light data' : v >= 150 ? 'Bright' : v >= LIGHT_ON ? 'Lit' : v >= 15 ? 'Dim' : 'Dark';
+const lightText = v => v == null ? 'No light data' : v >= 15 ? 'Bright' : v >= LIGHT_ON ? 'Lit' : 'Dark';
 const sigText = r => r == null ? '–' : r >= -60 ? 'Excellent' : r >= -70 ? 'Good' : r >= -80 ? 'Fair' : 'Weak';
 function toast(m) { const t = $('toast'); t.textContent = m; show('toast', true); clearTimeout(toast.t); toast.t = setTimeout(() => show('toast', false), 3200); }
 
@@ -335,7 +335,7 @@ const demo = (function () {
     ['Dispatch office', 'Warehouse', 'Bay 1', -58], [null, null, null, -64]];
   const devs = spec.map((s, i) => ({ id: 'd' + i, mac: '3C:71:BF:11:0' + i + ':F0', name: 'human-detector-110' + i + 'f0', label: s[0], site: s[1], room: s[2], notes: null,
     board: 'ESP32 DevKit V1', fw_version: '2026.10.2', ip: '192.168.0.' + (50 + i), rssi: s[3], uptime_s: 3600 * (5 + i * 31), free_heap: 180000 + i * 900,
-    presence: false, presence_since: null, distance_cm: null, light: [182, 20, 140, 96, 0, 160, 150, 75][i], time_synced: i !== 3, clock_offset_ms: 2100 + i * 90, last_time_sync: iso(now - 9e5 * (i + 1)),
+    presence: false, presence_since: null, distance_cm: null, light: [18, 1, 7, 6, 0, 16, 9, 5][i], time_synced: i !== 3, clock_offset_ms: 2100 + i * 90, last_time_sync: iso(now - 9e5 * (i + 1)),
     last_boot: iso(now - 36e5 * (5 + i * 31)), first_seen: iso(now - DAY * 20), last_seen: iso(i === 4 ? now - 36e5 * 3.2 : now - 2e4) }));
   const events = []; let id = 1;
   devs.forEach((d, di) => { for (let day = 6; day >= 0; day--) {
@@ -352,7 +352,7 @@ const demo = (function () {
   return {
     async devices() { return devs; }, async eventsSince(t) { return events.filter(e => e.started_at >= t); },
     async telemetry(i) { const d = devs.find(x => x.id === i), o = []; for (let k = 287; k >= 0; k--) { const hr = new Date(now - k * 3e5).getHours(), day = hr >= 7 && hr < 18;
-        o.push({ ts: iso(now - k * 3e5), rssi: Math.round(d.rssi + Math.sin(k / 17) * 3 + (rnd() - .5) * 4), light: Math.max(0, Math.round((day ? d.light : d.light * 0.08) + (rnd() - .5) * 10)) }); } return o; },
+        o.push({ ts: iso(now - k * 3e5), rssi: Math.round(d.rssi + Math.sin(k / 17) * 3 + (rnd() - .5) * 4), light: Math.max(0, Math.round((day ? d.light : d.light * 0.08) + (rnd() - .5) * 2)) }); } return o; },
     async log(i) { const d = devs.find(x => x.id === i); return [{ ts: d.last_time_sync, kind: 'time_sync', detail: { offset_ms: d.clock_offset_ms } }, { ts: d.last_boot, kind: 'boot', detail: { fw: d.fw_version, ip: d.ip, rssi: d.rssi } }]; },
     async commands(i) { return cmds[i] || []; },
     async update(i, p) { Object.assign(devs.find(x => x.id === i), p); return null; },
@@ -546,11 +546,11 @@ async function drawDetail(fresh) {
       ${stat('Occupied today', dur(st.secs))}${stat('Wi-Fi signal', d.rssi == null ? '–' : `${sigText(d.rssi)} · ${d.rssi} dBm`)}
       ${stat('Clock', d.time_synced ? 'Synced' : '<span style="color:var(--warn)">Not synced</span>')}
       ${stat('Last NTP sync', d.last_time_sync ? ago(d.last_time_sync) : '–')}${stat('Uptime', dur(d.uptime_s))}${stat('Last start', d.last_boot ? ago(d.last_boot) : '–')}
-      ${stat('Light level', d.light == null ? '–' : `${lightText(d.light)} · ${d.light} / 255`)}${stat('Room lights', d.light == null ? '–' : d.light >= LIGHT_ON ? 'On' : 'Off')}${stat('Target distance', up && d.presence && d.distance_cm ? (d.distance_cm / 100).toFixed(1) + ' m' : '–')}
+      ${stat('Light level', d.light == null ? '–' : `${lightText(d.light)} · ${d.light} / 255`)}${stat('Room', d.light == null ? '–' : d.light >= LIGHT_ON ? 'Lit' : 'Dark')}${stat('Target distance', up && d.presence && d.distance_cm ? (d.distance_cm / 100).toFixed(1) + ' m' : '–')}
     </div>
     <div class="card"><div class="hd"><h3>Occupancy</h3><span class="sub">Last 24 hours</span></div><div class="bd">${strip(ev, 26)}<div class="strip"><div class="cap"><span>24 h ago</span><span>12 h</span><span>now</span></div></div></div></div>
     <div class="card"><div class="hd"><h3>Wi-Fi signal</h3><span class="sub">Last 24 hours</span></div><div class="bd">${chart(tel, 'rssi', -95, -40, [-50, -70, -90], ' dBm', 'var(--accent)', 'gs')}</div></div>
-    <div class="card"><div class="hd"><h3>Light level</h3><span class="sub">Last 24 hours · 0–255</span></div><div class="bd">${chart(tel, 'light', 0, 255, [LIGHT_ON, 150, 240], '', 'var(--warn)', 'gl')}</div></div>
+    <div class="card"><div class="hd"><h3>Light level</h3><span class="sub">Last 24 hours · raw sensor value</span></div><div class="bd">${chart(tel, 'light', 0, Math.max(30, ...tel.map(r => r.light || 0)), [LIGHT_ON, 10, 20], '', 'var(--warn)', 'gl')}</div></div>
 
     <div class="card"><div class="hd"><h3>Name and location</h3></div><div class="bd">
       <div class="form3"><div><label class="lbl" for="f_label">Name</label><input class="field" id="f_label" value="${esc(d.label || '')}" placeholder="e.g. Boardroom"></div>
